@@ -1,0 +1,48 @@
+
+
+/*css section for user  profile page -------------------------------- */
+.user-details .user{
+  max-width: 50rem;
+  margin:0 auto;
+  border:var(--border);
+  padding:2rem;
+  width: 40%;
+}
+
+.user-details .user img{
+  width: 100px;
+  height: 100px;
+  object-fit: contain;
+  margin: bottom 0.5em;
+}
+
+.user-details .user p{
+  padding:1rem 0;
+  line-height: 1.5;
+  font-size: 20px;
+}
+
+.user-details .user p span{
+    color:var(--black);
+}
+
+.user-details .user p i{
+  margin-right:1rem;
+  color:var(--light-color);
+}
+
+.user-details .user .address{
+  margin: 1.5rem;
+}
+
+.user-details .user a{
+  display: inline-block;
+  padding: 1rem 2rem;
+  background-color:rgb(227, 227, 10);
+}
+
+.user-details .user .btn{
+  padding: 10px 20px;
+  font-size: 14px;
+}
+
