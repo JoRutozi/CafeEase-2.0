@@ -28,11 +28,18 @@ $dbname = "cafe_ease";
 $port = 3306;
 
 $ssl_cert = "C:\Users\User\Downloads\BaltimoreCyberTrustRoot.crt.pem";
-// Create connection
-$conn = new mysqli($servername, $username, $password, $dbname, $port);
 
-// Check connection
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
+$conn = mysqli_init();
+if (!$conn) {
+    die("MySQLi initialization failed.");
+}
+
+mysqli_ssl_set($conn, NULL, NULL, $ssl_cert, NULL, NULL);
+
+// Create connection
+if(!mysqli_real_connect($conn, $servername, $username, $password, $dbname, $port)) {
+   die("Connection failed: " . mysqli_connect_error());
+} else {   
+    echo "Securely connected to Azure MySQL Database!";
 }
 ?>
