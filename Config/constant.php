@@ -21,12 +21,13 @@ if (!defined('SITEURL')) {
 // Other constant definitions and configurations
 
 
-$servername = "localhost";
-$username = "root";
-$password = ""; // Make sure to provide the correct password for your MySQL server
+$servername = "cafeease-server.mysql.database.azure.com";
+$username = "vgiihukgpd";
+$password = "AiLOp$$GH42xbWLo"; // Make sure to provide the correct password for your MySQL server
 $dbname = "cafe_ease";
+$port = 3306;
 // Create connection
-$conn = new mysqli($servername, $username, $password, $dbname);
+$conn = new mysqli($servername, $username, $password, $dbname, $port);
 
 // Check connection
 if ($conn->connect_error) {
