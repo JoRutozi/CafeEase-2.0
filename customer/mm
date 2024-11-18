@@ -1,0 +1,337 @@
+<!-- <?php 
+ 
+include('partial/menu.php');
+include('../Config/constant.php');
+
+$customer_id = $_SESSION['user'];
+
+// Initialize variables
+$ewallet_balance = 0;
+$total_balance = 0;
+$message = '';
+
+// Fetch ewallet_balance and total_balance from the database
+try {
+    $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
+    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+    // Fetch ewallet_balance
+    $stmt = $conn->prepare("SELECT ewallet_balance FROM customer WHERE customer_ID = :customer_id");
+    $stmt->bindParam(':customer_id', $customer_id);
+    $stmt->execute();
+    $ewallet_balance = (float) $stmt->fetchColumn();
+
+    // Fetch total_balance
+    $stmt = $conn->prepare("SELECT SUM(total_balance) FROM `order` WHERE customer_ID = :customer_id");
+    $stmt->bindParam(':customer_id', $customer_id);
+    $stmt->execute();
+    $total_balance = (float) $stmt->fetchColumn();
+
+    // Handle null values from the database
+    if ($ewallet_balance === null) {
+        $ewallet_balance = 0.0;
+    }
+    if ($total_balance === null) {
+        $total_balance = 0.0;
+    }
+
+} catch(PDOException $e) {
+    echo "Error: " . $e->getMessage();
+}
+
+
+if (isset($_GET['topup_amount'])) {
+    $topup_amount = filter_input(INPUT_GET, 'topup_amount', FILTER_VALIDATE_FLOAT);
+
+    if ($topup_amount !== false && $topup_amount > 0) {
+        // Add the top-up amount to the user's wallet
+        $ewallet_balance += $topup_amount;
+        try {
+            $stmt = $conn->prepare("UPDATE customer SET ewallet_balance = :ewallet_balance WHERE customer_ID = :customer_id");
+            $stmt->bindParam(':ewallet_balance', $ewallet_balance);
+            $stmt->bindParam(':customer_id', $customer_id);
+            $stmt->execute();
+            $message = "Successfully topped up Ksh " . number_format($topup_amount, 2);
+        } catch(PDOException $e) {
+            echo "Error: " . $e->getMessage();
+        }
+    } else {
+        $message = "Invalid top-up amount.";
+    }
+} 
+
+// After successful payment
+if ($ewallet_balance >= $total_balance) {
+    // Deduct the total_balance from the user's wallet
+    $ewallet_balance -= $total_balance;
+
+    try {
+        // Update the customer's ewallet_balance
+        $stmt = $conn->prepare("UPDATE customer SET ewallet_balance = :ewallet_balance WHERE customer_ID = :customer_id");
+        $stmt->bindParam(':ewallet_balance', $ewallet_balance);
+        $stmt->bindParam(':customer_id', $customer_id);
+        $stmt->execute();
+    
+        // Insert the payment details into the payments table
+        $payment_date = date('Y-m-d H:i:s');
+        $stmt = $conn->prepare("INSERT INTO payments (customer_ID, payment_date, amount) VALUES (:customer_id, :payment_date, :amount)");
+        $stmt->bindParam(':customer_id', $customer_id);
+        $stmt->bindParam(':payment_date', $payment_date);
+        $stmt->bindParam(':amount', $total_balance);
+        $stmt->execute();
+    
+        $message = "Payment successfully made!";
+    } catch(PDOException $e) {
+        echo "Error: " . $e->getMessage();
+    }
+    
+    
+} else {
+    // Set ewallet_balance to zero
+    $ewallet_balance = 0;
+
+    // Subtract total_balance from the remaining ewallet_balance
+    $remaining_balance = $ewallet_balance - $total_balance;
+
+    // Update the total_balance to the remaining balance
+    $total_balance = $remaining_balance;
+
+    $message = "Insufficient balance in E-Wallet. Your E-Wallet has been set to zero and your remaining balance has been updated.";
+}
+
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <style>
+        .header{
+            background-color: blue;
+            color: whitesmoke;
+            text-align: left;
+            padding: 20px;
+            font-size: 24px;
+        }
+        .dashboard {
+            display: flex;
+            justify-content: space-around;
+            background-image:url("back.png");
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .card {
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            padding: 20px;
+            text-align: center;
+            width: 30%;
+        }
+        .card h2 {
+            margin: 0;
+        }
+        .button-container {
+            display: flex;
+            margin: 20px 0;
+            justify-content: flex-end;
+            margin-left: auto;
+        }
+        .button-container button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .make-payment {
+            background-color: darkcyan;
+            color: white;
+            margin-left: 20px;
+        }
+        .payment-history {
+            display: flex;
+            justify-content: center;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: bottom 20px;
+        }
+        .history-btn{
+            background-color: darkcyan;
+            color: white;
+            margin-left: 20px;
+            padding: 15px 30px;
+            font-size: 18px;
+        }
+
+        #ewallet-balance {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        #total-balance {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+        }
+    </style>
+    <script>
+        function makePayment() {
+            var paymentAmount = <?php echo $total_balance; ?>;
+
+            // Create a new XMLHttpRequest object
+            var xhr = new XMLHttpRequest();
+
+            // Configure the request
+            xhr.open('POST', 'make_payment.php', true);
+            xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+
+            // Define the onreadystatechange event handler
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    if (xhr.status === 200) {
+                        // Handle the response from make_payment.php
+                        var response = xhr.responseText;
+                        console.log(response);
+
+                        // Update the E-Wallet balance and display a success message
+                        var ewalletBalance = document.getElementById('ewallet-balance');
+                        ewalletBalance.textContent = response;
+                        alert('Payment successfully made!');
+                    } else {
+                        // Handle errors
+                        console.log('Error: ' + xhr.status);
+                    }
+                }
+            };
+
+            // Send the payment amount to make_payment.php
+            xhr.send('payment_amount=' + paymentAmount);
+        }
+    </script>
+</head>
+<body>
+    <header class="header">Your E-Wallet</header>
+    <div class="dashboard">
+        <div class="card">
+            <h2>E-WALLET BALANCE</h2>
+            <p id="ewallet-balance"><?php echo number_format($ewallet_balance, 2); ?></p>
+            <p>Current E-Wallet Balance</p>
+        </div>
+        <div class="card">
+            <h2>PAYMENT BALANCE</h2>
+            <p id="total-balance"><?php echo number_format($total_balance, 2); ?></p>
+            <p>Your Payment Balance</p>
+        </div>
+    </div>
+    <div class="button-container">
+        <button onclick="makePayment()" class="make-payment">Make the Payment</button>
+    </div>
+</body>
+</html>
+
+// <?php include('partial/footer.php'); ?> 
+<script>
+    function makePayment() {
+        var paymentAmount = <?php echo $total_balance; ?>;
+
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', 'make_payment.php', true);
+        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === XMLHttpRequest.DONE) {
+                if (xhr.status === 200) {
+                    // Optional: Handle response if needed
+                    alert('Payment successfully made!');
+                    window.location.href = 'thank_you.php'; // Redirect to thank you page
+                } else {
+                    console.log('Error: ' + xhr.status);
+                }
+            }
+        };
+
+        xhr.send('payment_amount=' + paymentAmount);
+    }
+</script>
+<?php
+// Ensure user is logged in (again, although ideally this should not be necessary here)
+if (!isset($_SESSION['user'])) {
+    header('Location: login.php'); // Redirect to login page if user is not logged in
+    exit;
+}
+
+try {
+    // Connect to database (you can reuse the existing $conn if it's still in scope)
+    $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
+    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+    // Ensure $customer_id is still set
+    $customer_id = $_SESSION['user'];
+
+    // Fetch ewallet_balance
+    $stmt = $conn->prepare("SELECT ewallet_balance FROM customer WHERE customer_ID = :customer_id");
+    $stmt->bindParam(':customer_id', $customer_id);
+    $stmt->execute();
+    $ewallet_balance = (float) $stmt->fetchColumn();
+
+    // Fetch total_amount of the last order
+    $stmt = $conn->prepare("SELECT total_amount FROM `order` WHERE customer_ID = :customer_id ORDER BY order_ID DESC LIMIT 1");
+    $stmt->bindParam(':customer_id', $customer_id);
+    $stmt->execute();
+    $total_amount = (float) $stmt->fetchColumn();
+
+    // Handle null values from the database
+    if ($ewallet_balance === null) {
+        $ewallet_balance = 0.0;
+    }
+    if ($total_amount === null) {
+        $total_amount = 0.0;
+    }
+
+    // Check if ewallet_balance is sufficient for payment
+    if ($ewallet_balance >= $total_amount) {
+        // Deduct total_amount from ewallet_balance
+        $ewallet_balance -= $total_amount;
+
+        // Update ewallet_balance in the customer table
+        $stmt = $conn->prepare("UPDATE customer SET ewallet_balance = :ewallet_balance WHERE customer_ID = :customer_id");
+        $stmt->bindParam(':ewallet_balance', $ewallet_balance);
+        $stmt->bindParam(':customer_id', $customer_id);
+        $stmt->execute();
+
+        // Insert payment details into payments table
+        $payment_date = date('Y-m-d H:i:s');
+        $stmt = $conn->prepare("INSERT INTO payments (customer_ID, payment_date, amount) VALUES (:customer_id, :payment_date, :amount)");
+        $stmt->bindParam(':customer_id', $customer_id);
+        $stmt->bindParam(':payment_date', $payment_date);
+        $stmt->bindParam(':amount', $total_amount);
+        $stmt->execute();
+
+        // Redirect to thank you page
+        header('Location: thank_you.php');
+        exit;
+    } else {
+        // Insufficient balance scenario (though ideally handled in the previous page)
+        // Redirect to an error page or display an error message
+        echo "Insufficient balance in E-Wallet.";
+    }
+
+} catch(PDOException $e) {
+    echo "Error: " . $e->getMessage();
+}
+
+include('partial/footer.php');
+?>
