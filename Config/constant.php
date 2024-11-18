@@ -26,6 +26,8 @@ $username = "vgiihukgpd";
 $password = "AiLOp$$GH42xbWLo"; // Make sure to provide the correct password for your MySQL server
 $dbname = "cafe_ease";
 $port = 3306;
+
+$ssl_cert = "C:\Users\User\Downloads\BaltimoreCyberTrustRoot.crt.pem";
 // Create connection
 $conn = new mysqli($servername, $username, $password, $dbname, $port);
 
