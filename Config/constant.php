@@ -20,22 +20,9 @@ if (!defined('SITEURL')) {
 
 // Other constant definitions and configurations
 
-
-$servername = "cafe-ease.mysql.database.azure.com";
-$username = "db_admin";
-$password = "cafe-ease123"; // Make sure to provide the correct password for your MySQL server
-$dbname = "cafe_ease";
-$port = 3306;
-
 $conn = mysqli_init();
-if (!$conn) {
-    die("MySQLi initialization failed.");
+mysqli_ssl_set($conn,NULL,NULL, "C:/ssl/DigiCertGlobalRootCA.crt.pem", NULL, NULL);
+mysqli_real_connect($conn, 'cafe-ease.mysql.database.azure.com', 'db_admin', 'cafe-ease123', 'cafe_ease', 3306, MYSQLI_CLIENT_SSL);
+if (mysqli_connect_errno()) {
+die('Failed to connect to MySQL: '.mysqli_connect_error());
 }
-
-// Create connection
-if(!mysqli_real_connect($conn, $servername, $username, $password, $dbname, $port)) {
-   die("Connection failed: " . mysqli_connect_error());
-} else {   
-    echo "Securely connected to Azure MySQL Database!";
-}
-?>
