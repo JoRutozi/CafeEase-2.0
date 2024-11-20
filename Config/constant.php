@@ -27,17 +27,13 @@ $password = "cafe-ease123"; // Make sure to provide the correct password for you
 $dbname = "cafe_ease";
 $port = 3306;
 
-$ssl_cert = "C:\ssl\BaltimoreCyberTrustRoot.crt.pem";
-
 $conn = mysqli_init();
 if (!$conn) {
     die("MySQLi initialization failed.");
 }
 
-mysqli_ssl_set($conn, NULL, NULL, $ssl_cert, NULL, NULL);
-
 // Create connection
-if(!mysqli_real_connect($conn, $servername, $username, $password, $dbname, $port, MYSQLI_CLIENT_SSL)) {
+if(!mysqli_real_connect($conn, $servername, $username, $password, $dbname, $port)) {
    die("Connection failed: " . mysqli_connect_error());
 } else {   
     echo "Securely connected to Azure MySQL Database!";
