@@ -21,7 +21,7 @@ if (!defined('SITEURL')) {
 // Other constant definitions and configurations
 
 $conn = mysqli_init();
-mysqli_ssl_set($conn,NULL,NULL, "C:\ssl\DigiCertGlobalRootCA.crt", NULL, NULL);
+mysqli_ssl_set($conn,NULL,NULL, "C:\ssl\DigiCertGlobalRootCA.crt.pem", NULL, NULL);
 mysqli_real_connect($conn, 'cafe-ease.mysql.database.azure.com', 'db_admin', 'cafe-ease123', 'cafe_ease', 3306, MYSQLI_CLIENT_SSL);
 if (mysqli_connect_errno()) {
 die('Failed to connect to MySQL: '.mysqli_connect_error());
