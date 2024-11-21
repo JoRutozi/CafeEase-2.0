@@ -25,3 +25,6 @@ mysqli_real_connect($conn, 'cafe-ease.mysql.database.azure.com', 'db_admin', 'ca
 if (mysqli_connect_errno()) {
 die('Failed to connect to MySQL: '.mysqli_connect_error());
 }
+echo "Connected successfully";
+
+?>
